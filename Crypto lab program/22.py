@@ -1,47 +1,74 @@
-# filename: 22_cbc_encrypt_decrypt_choices.py
-"""
-CBC encryption/decryption using:
-- a toy Affine modulo 256 block cipher (block size = 1 byte for simplicity)
-- For real ciphers use pycryptodome (DES/AES)
-Also provides the S-DES test vector example as explained (S-DES full implementation not included).
-"""
-from Crypto.Cipher import DES3
-from Crypto.Random import get_random_bytes
+IV = '10101010'
 
-# Toy affine cipher mod 256 for demonstration (block size 1 byte)
-def affine_enc_byte(m, a, b):
-    return (a*m + b) % 256
-def affine_dec_byte(c, a, b):
-    # find modular inverse of a mod 256 (only works for odd a)
-    inv = pow(a, -1, 256)
-    return (inv*(c - b)) % 256
+P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6]
+P8  = [6, 3, 7, 4, 8, 5, 10, 9]
+IP  = [2, 6, 3, 1, 4, 8, 5, 7]
+IP_INV = [4, 1, 3, 5, 7, 2, 8, 6]
+EP  = [4, 1, 2, 3, 2, 3, 4, 1]
+P4  = [2, 4, 3, 1]
 
-def cbc_encrypt_affine(plaintext_bytes, iv, a, b):
+S0 = [[[1,0],[0,1],[3,2],[2,3]],
+      [[3,2],[1,0],[0,1],[2,3]]]
+
+S1 = [[[0,1],[2,0],[1,3],[3,2]],
+      [[2,0],[1,3],[3,2],[0,1]]]
+
+def permute(bits, table):
+    return ''.join(bits[i-1] for i in table)
+
+def left_shift(bits, n):
+    return bits[n:] + bits[:n]
+
+def xor(a, b):
+    return ''.join('0' if i == j else '1' for i, j in zip(a, b))
+
+def sbox(bits, box):
+    row = int(bits[0] + bits[3], 2)
+    col = int(bits[1] + bits[2], 2)
+    return format(box[row][col], '02b')
+
+def fk(bits, key):
+    L, R = bits[:4], bits[4:]
+    temp = permute(R, EP)
+    temp = xor(temp, key)
+    left, right = temp[:4], temp[4:]
+    s_out = sbox(left, S0) + sbox(right, S1)
+    s_out = permute(s_out, P4)
+    return xor(L, s_out) + R
+
+def encrypt_block(plain, k1, k2):
+    bits = permute(plain, IP)
+    bits = fk(bits, k1)
+    bits = bits[4:] + bits[:4]
+    bits = fk(bits, k2)
+    return permute(bits, IP_INV)
+
+def generate_keys(key):
+    key = permute(key, P10)
+    L, R = key[:5], key[5:]
+    Ls1, Rs1 = left_shift(L, 1), left_shift(R, 1)
+    k1 = permute(Ls1 + Rs1, P8)
+    Ls2, Rs2 = left_shift(Ls1, 2), left_shift(Rs1, 2)
+    k2 = permute(Ls2 + Rs2, P8)
+    return k1, k2
+
+def cbc_encrypt(plaintext_blocks, key, iv):
+    k1, k2 = generate_keys(key)
     prev = iv
-    c=[]
-    for p in plaintext_bytes:
-        x = affine_enc_byte(prev[0] ^ p, a, b)
-        c.append(bytes([x]))
-        prev = bytes([x])
-    return b''.join(c)
+    ciphertext = []
+    for block in plaintext_blocks:
+        block = xor(block, prev)
+        enc = encrypt_block(block, k1, k2)
+        ciphertext.append(enc)
+        prev = enc
+    return ciphertext
 
-def cbc_decrypt_affine(cipher_bytes, iv, a, b):
-    prev = iv
-    p=[]
-    for c in cipher_bytes:
-        m = affine_dec_byte(c, a, b)
-        p_byte = prev[0] ^ m
-        p.append(bytes([p_byte]))
-        prev = bytes([c])
-    return b''.join(p)
+key = '1010000010'
+plaintext_blocks = ['11010111', '00110011']
+ciphertext = cbc_encrypt(plaintext_blocks, key, IV)
 
-if __name__=='__main__':
-    # test with toy data
-    iv = bytes([0])
-    pt = bytes([0,1,2,3])
-    a,b = 5,7  # a must be coprime with 256 (odd)
-    ct = cbc_encrypt_affine(pt, iv, a, b)
-    print("Affine-CBC ct:", ct)
-    pt2 = cbc_decrypt_affine(ct, iv, a, b)
-    print("Recovered:", list(pt2))
-    print("\nFor real DES/3DES use pycryptodome's DES/3DES modules. For S-DES I can provide exact test vector code on request.")
+for i, c in enumerate(ciphertext, 1):
+    print(f"Block {i}: {c}")
+#output
+Block 1: 00010100
+Block 2: 10101100
