@@ -1,15 +1,33 @@
-def caesar_cipher(text, k):
+# Program 1: Caesar Cipher
+def caesar_encrypt(text, shift):
     result = ""
     for char in text:
-        if char.isalpha():
-            shift = 65 if char.isupper() else 97
-            result += chr((ord(char) - shift + k) % 26 + shift)
+        if char.isupper():
+            result += chr((ord(char) - 65 + shift) % 26 + 65)
+        elif char.islower():
+            result += chr((ord(char) - 97 + shift) % 26 + 97)
         else:
             result += char
     return result
 
-# Example
-plaintext = input("Enter plaintext: ")
-k = int(input("Enter shift (1–25): "))
-ciphertext = caesar_cipher(plaintext, k)
-print("Encrypted text:", ciphertext)
+def caesar_decrypt(text, shift):
+    return caesar_encrypt(text, -shift)
+
+def main():
+    print("=== Caesar Cipher ===")
+    choice = input("Enter 'e' for encrypt or 'd' for decrypt: ").lower()
+    text = input("Enter text: ")
+    shift = int(input("Enter shift value (1-25): "))
+    
+    if choice == 'e':
+        print(f"Encrypted: {caesar_encrypt(text, shift)}")
+    elif choice == 'd':
+        print(f"Decrypted: {caesar_decrypt(text, shift)}")
+
+if __name__ == "__main__":
+    main()
+#output
+=== Caesar Cipher ===
+Enter 'e' for encrypt or 'd' for decrypt: e
+Enter text: dhiva
+Enter shift value (1-25): 20
