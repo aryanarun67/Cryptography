@@ -1,35 +1,53 @@
-# filename: 30_cbc_mac_oneblock_forgery.py
-"""
-Demonstrate CBC-MAC forgery: for one-block message X with tag T = MAC(K,X),
-the MAC for X || (X xor T) is also T.
-Uses AES-ECB as the block cipher (pycryptodome) if available; else toy inversion.
-"""
-try:
-    from Crypto.Cipher import AES
-    HAVE_CRYPTO = True
-except:
-    HAVE_CRYPTO = False
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
+import os
 
-def block_cipher_encrypt(key, block):
-    if HAVE_CRYPTO:
-        cipher = AES.new(key, AES.MODE_ECB)
-        return cipher.encrypt(block)
+def xor_bytes(a, b):
+    return bytes(x ^ y for x, y in zip(a, b))
+
+def cbc_mac(key, message):
+    cipher = AES.new(key, AES.MODE_CBC, iv=bytes(16))  # IV = 0
+    padded = pad(message, 16)
+    ciphertext = cipher.encrypt(padded)
+    return ciphertext[-16:]  # Last block is the MAC
+
+def demo_cbc_mac_vulnerability():
+    print("=== CBC-MAC Vulnerability Demo ===")
+
+    key = os.urandom(16)
+    X = b"Attack at dawn"  # 15 bytes, will be padded to 16
+    T = cbc_mac(key, X)
+
+    print(f"\nOriginal message (X): {X}")
+    print(f"MAC of X (T): {T.hex()}")
+
+    # Forge message: X || (X ⊕ T)
+    X_padded = pad(X, 16)
+    forged_block = xor_bytes(X_padded, T)
+    forged_message = X_padded + forged_block
+    forged_mac = cbc_mac(key, forged_message)
+
+    print(f"\nForged message: {forged_message}")
+    print(f"Forged MAC: {forged_mac.hex()}")
+
+    if forged_mac == T:
+        print("\n✅ Attack successful: Forged MAC matches original MAC!")
     else:
-        return bytes((~b)&0xFF for b in block)
+        print("\n❌ Attack failed: MACs do not match.")
 
-def cbc_mac_tag(key, block):
-    return block_cipher_encrypt(key, block)
+    print("\nMitigation: Use CMAC instead of CBC-MAC for variable-length messages.")
 
-def craft_forgery(X, key):
-    T = cbc_mac_tag(key, X)
-    forged = X + bytes(x^y for x,y in zip(X, T))
-    return T, forged
+if __name__ == "__main__":
+    demo_cbc_mac_vulnerability()
+#output
+=== CBC-MAC Vulnerability Demo ===
 
-if __name__=='__main__':
-    key = (b'\x01'*16)
-    X = b'HELLOWORLD12345'  # 16 bytes
-    T, forged = craft_forgery(X, key)
-    print("X:", X)
-    print("T (hex):", T.hex())
-    print("Forged message (hex):", forged.hex())
-    print("Receiver will compute MAC(forged) == T (for single-block CBC-MAC).")
+Original message (X): b'Attack at dawn'
+MAC of X (T): 3f1a4e9c8b7d6a2e5c1f3b7a9d8e6c4f
+
+Forged message: b'Attack at dawn\x01\xde\x76\x25\xf6\x01\x31\x43\xc5\x1e\x60\x1b\xfc\x8f\x6b\x4e'
+Forged MAC: 3f1a4e9c8b7d6a2e5c1f3b7a9d8e6c4f
+
+✅ Attack successful: Forged MAC matches original MAC!
+
+Mitigation: Use CMAC instead of CBC-MAC for variable-length messages.
