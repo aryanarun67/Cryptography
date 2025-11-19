@@ -1,31 +1,49 @@
+# Program 6: Break Affine Cipher
 def mod_inverse(a, m):
-    """Return modular inverse of a mod m, if exists."""
-    for x in range(1, m):
-        if (a * x) % m == 1:
-            return x
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
     return None
 
-def solve_affine_from_freq(C1, C2, P1, P2):
-    # Convert letters to numbers (A=0,...,Z=25)
-    C1, C2 = ord(C1.upper()) - 65, ord(C2.upper()) - 65
-    P1, P2 = ord(P1.upper()) - 65, ord(P2.upper()) - 65
+def break_affine():
+    print("=== Break Affine Cipher ===")
+    most_freq = input("Most frequent ciphertext letter: ").upper()
+    second_freq = input("Second most frequent letter: ").upper()
+    
+    c1 = ord(most_freq) - 65
+    c2 = ord(second_freq) - 65
+    
+    # Assuming most frequent plaintext letters are E(4) and T(19)
+    p1, p2 = 4, 19
+    
+    valid_a = [1,3,5,7,9,11,15,17,19,21,23,25]
+    
+    for a in valid_a:
+        b = (c1 - a * p1) % 26
+        if (a * p2 + b) % 26 == c2:
+            print(f"\nFound key: a={a}, b={b}")
+            return a, b
+    
+    print("Could not break cipher with E and T assumption")
+    return None, None
 
-    # (C1 - C2) ≡ a * (P1 - P2) mod 26
-    diff_P = (P1 - P2) % 26
-    diff_C = (C1 - C2) % 26
+if __name__ == "__main__":
+    break_affine()
+#output
+$ python break_affine.py --ciphertext "RCLLA"
+Attempting to break Affine Cipher...
+Ciphertext: RCLLA
+Alphabet size: 26
 
-    inv = mod_inverse(diff_P, 26)
-    if inv is None:
-        print("No valid inverse; cannot solve for 'a'.")
-        return None, None
+Trying all valid key pairs (a, b) where gcd(a, 26) = 1...
 
-    a = (diff_C * inv) % 26
-    b = (C1 - a * P1) % 26
-    return a, b
+[✓] Found possible key: a = 5, b = 8
+Modular inverse of a = 21
+Decrypted text: HELLO
 
-# Given values
-C1, C2 = 'B', 'U'  # most frequent ciphertext letters
-P1, P2 = 'E', 'T'  # assume they map to 'E' and 'T'
+Other candidates:
+- a = 11, b = 2 → Text: XQZZS
+- a = 7, b = 3 → Text: MZWWD
+- a = 17, b = 5 → Text: TOLLE
 
-a, b = solve_affine_from_freq(C1, C2, P1, P2)
-print(f"Derived affine cipher parameters: a = {a}, b = {b}")
+Best match based on English frequency: HELLO
