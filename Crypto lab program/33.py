@@ -1,23 +1,28 @@
-# filename: 33_des_pycryptodome.py
 from Crypto.Cipher import DES
 from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
 
-def pad8(b): return b + b'\x00' * ((8 - len(b) % 8) % 8)
+def des_demo():
+    # DES requires 8-byte key and block size
+    key = get_random_bytes(8)
+    cipher = DES.new(key, DES.MODE_ECB)
 
-key = input("Enter 8-byte key hex (16 hex chars) or press Enter to use random: ").strip()
-if not key:
-    keyb = get_random_bytes(8)
-    print("Using random key:", keyb.hex())
-else:
-    keyb = bytes.fromhex(key)
-iv = get_random_bytes(8)
-plaintext = input("Enter plaintext: ").encode()
-cipher = DES.new(keyb, DES.MODE_CBC, iv)
-ct = cipher.encrypt(pad8(plaintext))
-print("IV:", iv.hex())
-print("Ciphertext (hex):", ct.hex())
+    message = b"SecretMsg"  # Must be padded to 8-byte blocks
+    padded_msg = pad(message, DES.block_size)
 
-# Decrypt
-dec = DES.new(keyb, DES.MODE_CBC, iv)
-pt = dec.decrypt(ct).rstrip(b'\x00')
-print("Decrypted:", pt.decode())
+    # Encrypt
+    ciphertext = cipher.encrypt(padded_msg)
+    print("🔒 Encrypted:", ciphertext.hex())
+
+    # Decrypt
+    decipher = DES.new(key, DES.MODE_ECB)
+    decrypted_padded = decipher.decrypt(ciphertext)
+    decrypted = unpad(decrypted_padded, DES.block_size)
+    print("🔓 Decrypted:", decrypted.decode())
+
+if __name__ == "__main__":
+    des_demo()
+#output
+
+🔒 Encrypted: 3f2c1e9a8b7d6c4f...
+🔓 Decrypted: SecretMsg
