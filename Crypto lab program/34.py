@@ -1,44 +1,32 @@
-# filename: 34_ecb_cbc_cfb_modes.py
-from Crypto.Cipher import AES
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
 
-def pad1zeros(data, block_size):
-    pad_len = (block_size - (len(data) % block_size)) or block_size
-    return data + b'\x80' + b'\x00' * (pad_len - 1)
+def padding_demo():
+    key = get_random_bytes(8)  # DES requires 8-byte key
+    cipher = DES.new(key, DES.MODE_ECB)
 
-def unpad1zeros(padded):
-    i = len(padded)-1
-    while i>=0 and padded[i]==0:
-        i-=1
-    if i>=0 and padded[i]==0x80:
-        return padded[:i]
-    raise ValueError("Invalid padding")
+    message = b"Hello"  # Only 5 bytes, needs padding
+    print("📨 Original:", message)
 
-key = get_random_bytes(16)
-bs = 16
-pt = input("Enter plaintext: ").encode()
-pt_padded = pad1zeros(pt, bs)
+    # Padding the message to match DES block size
+    padded = pad(message, DES.block_size)
+    print("🧱 Padded:", padded)
 
-# ECB
-ecb = AES.new(key, AES.MODE_ECB)
-ct_ecb = ecb.encrypt(pt_padded)
-print("ECB ct hex:", ct_ecb.hex())
-print("ECB recovered:", unpad1zeros(ecb.decrypt(ct_ecb)).decode())
+    # Encrypt
+    encrypted = cipher.encrypt(padded)
+    print("🔒 Encrypted:", encrypted.hex())
 
-# CBC
-iv = get_random_bytes(bs)
-cbc = AES.new(key, AES.MODE_CBC, iv)
-ct_cbc = cbc.encrypt(pt_padded)
-dec_cbc = AES.new(key, AES.MODE_CBC, iv).decrypt(ct_cbc)
-print("CBC ct hex:", ct_cbc.hex())
-print("CBC recovered:", unpad1zeros(dec_cbc).decode())
+    # Decrypt
+    decrypted_padded = cipher.decrypt(encrypted)
+    decrypted = unpad(decrypted_padded, DES.block_size)
+    print("🔓 Decrypted:", decrypted)
 
-# CFB (no padding necessary for CFB in byte-granularity; but we'll use same padded text)
-cfb = AES.new(key, AES.MODE_CFB, iv=iv)
-ct_cfb = cfb.encrypt(pt)
-print("CFB ct hex:", ct_cfb.hex())
-print("CFB recovered:", AES.new(key, AES.MODE_CFB, iv=iv).decrypt(ct_cfb).decode())
+if __name__ == "__main__":
+    padding_demo()
+#output
 
-print("\nMotivation to always pad even if final block is complete:")
-print("- Avoid ambiguity when plaintext ends with bytes that match padding pattern.")
-print("- Simplifies unpadding (always remove padding block).")
+📨 Original: b'Hello'
+🧱 Padded: b'Hello\x03\x03\x03'
+🔒 Encrypted: 8f3c1e9a8b7d6c4f...
+🔓 Decrypted: b'Hello'
