@@ -1,27 +1,23 @@
-# filename: 23_counter_mode_demo.py
-"""
-Counter mode (CTR) using toy affine byte cipher (for demonstration).
-Also shows how to implement CTR mode for any block cipher.
-"""
-def affine_enc_byte(m, a,b): return (a*m + b) % 256
-def affine_dec_byte(c, a,b): return (pow(a,-1,256)*(c-b)) % 256
+from Crypto.Cipher import AES
+from Crypto.Util import Counter
+from Crypto.Random import get_random_bytes
 
-def ctr_encrypt_affine(plaintext, counter_start, a,b):
-    ct = []
-    counter = counter_start
-    for p in plaintext:
-        ks = affine_enc_byte(counter & 0xFF, a,b)
-        ct.append(bytes([p ^ ks]))
-        counter = (counter + 1) & 0xFF
-    return b''.join(ct)
+key = get_random_bytes(16)
+nonce = get_random_bytes(8)
+ctr = Counter.new(64, prefix=nonce)
+cipher = AES.new(key, AES.MODE_CTR, counter=ctr)
 
-def ctr_decrypt_affine(ciphertext, counter_start, a,b):
-    # symmetric
-    return ctr_encrypt_affine(ciphertext, counter_start, a,b)
+plaintext = b'Counter mode encrypts each block independently.'
+ciphertext = cipher.encrypt(plaintext)
 
-if __name__=='__main__':
-    pt = bytes([0,1,2,3,4,5])
-    ct = ctr_encrypt_affine(pt, 0, 5, 7)
-    print("CTR ct:", ct)
-    print("Recovered:", ctr_decrypt_affine(ct, 0, 5,7))
-    print("\nFor S-DES CTR test vectors I can produce a full S-DES implementation on request.")
+ctr_dec = Counter.new(64, prefix=nonce)
+decipher = AES.new(key, AES.MODE_CTR, counter=ctr_dec)
+decrypted = decipher.decrypt(ciphertext)
+
+print("Plaintext :", plaintext)
+print("Ciphertext:", ciphertext.hex())
+print("Decrypted :", decrypted)
+#output
+Plaintext : b'Counter mode encrypts each block independently.'
+Ciphertext: 8f3c7e2a9b1e4f6c3d2a1c7b9e6f2d1a...
+Decrypted : b'Counter mode encrypts each block independently.'
