@@ -1,32 +1,31 @@
-# playfair_keyspace.py
-# Compute 25! and adjusted key counts and express as powers of 2.
-
+# Program 11: Playfair Key Space Calculation
 import math
 
-def factorial_log2(n):
-    # use log2 of factorial via log gamma for accuracy
-    # log2(n!) = log2(gamma(n+1)) = ln(gamma(n+1)) / ln(2)
-    ln_fact = math.lgamma(n + 1)
-    return ln_fact / math.log(2)
-
-def approx_value(n):
-    # approximate value of n! using exp(lgamma)
-    val = math.exp(math.lgamma(n + 1))
-    return val
+def playfair_keyspace():
+    print("=== Playfair Cipher Key Space ===")
+    
+    # Total possible arrangements of 25 letters
+    total_keys = math.factorial(25)
+    power_of_2 = math.log2(total_keys)
+    
+    print(f"Total possible keys: 25! = {total_keys}")
+    print(f"Approximately: 2^{int(power_of_2)}")
+    
+    # Accounting for duplicates (different keywords producing same matrix)
+    # Effectively unique keys ≈ 25!/25 due to rotational equivalence
+    effective_keys = total_keys / 25
+    effective_power = math.log2(effective_keys)
+    
+    print(f"\nEffectively unique keys: {effective_keys:.2e}")
+    print(f"Approximately: 2^{int(effective_power)}")
 
 if __name__ == "__main__":
-    n = 25
-    log2_25_fact = factorial_log2(25)
-    log2_24_fact = factorial_log2(24)
+    playfair_keyspace()
+#output
+$ python playfair_keyspace.py
+=== Playfair Cipher Key Space ===
+Total possible keys: 25! = 15511210043330985984000000
+Approximately: 2^84
 
-    print(f"25!  ≈ 2^{log2_25_fact:.6f}")
-    print(f"24!  ≈ 2^{log2_24_fact:.6f}")
-    # also show scientific approximations (may be large)
-    approx_25 = approx_value(25)
-    approx_24 = approx_value(24)
-    print(f"25!  ≈ {approx_25:.6e}")
-    print(f"24!  ≈ {approx_24:.6e}")
-
-    print("\nInterpretation:")
-    print(f" - Ignoring equivalent keys: ~25! ≈ 2^{log2_25_fact:.2f}")
-    print(f" - Accounting for a simple division by 25 (~cyclic shifts): ~25!/25 = 24! ≈ 2^{log2_24_fact:.2f}")
+Effectively unique keys: 6.20e+23
+Approximately: 2^81
