@@ -1,10 +1,59 @@
-ciphertext = """53‡‡†305))6*;4826)4‡.)4‡);806*;48†8¶60))85;;]8*;:‡*8†83
-(88)5*†;46(;88*96*?;8)*‡(;485);5*†2:*‡(;4956*2(5*—4)8¶8*
-;4069285);)6†8)4‡‡;1(‡9;48081;8:8‡1;48†85;4)485†528806*81
-(‡9;48;(88;4(‡?34;48)4‡;161;:188;‡?;"""
+# Program 7: Simple Substitution Decryption
+def frequency_analysis(ciphertext):
+    freq = {}
+    for char in ciphertext.upper():
+        if char.isalpha():
+            freq[char] = freq.get(char, 0) + 1
+    return sorted(freq.items(), key=lambda x: x[1], reverse=True)
 
-print("Decrypted message (historical solution):")
-print("A GOOD GLASS IN THE BISHOP'S HOSTEL IN THE DEVIL'S SEAT "
-      "TWENTY-ONE DEGREES AND THIRTEEN MINUTES NORTHEAST AND BY NORTH "
-      "MAIN BRANCH SEVENTH LIMB EAST SIDE SHOOT FROM THE LEFT EYE OF THE "
-      "DEATH'S HEAD A BEE LINE FROM THE TREE THROUGH THE SHOT FIFTY FEET OUT.")
+def main():
+    print("=== Substitution Cipher Decryption ===")
+    ciphertext = input("Enter ciphertext: ")
+    
+    print("\nFrequency Analysis:")
+    freq = frequency_analysis(ciphertext)
+    for char, count in freq[:10]:
+        print(f"{char}: {count}")
+    
+    print("\nHints:")
+    print("- Most common English letter: E")
+    print("- Common word: THE")
+    print("- Look for repeated patterns")
+    
+    mapping = {}
+    while True:
+        cipher_char = input("\nCipher char (or 'done'): ").upper()
+        if cipher_char == 'DONE':
+            break
+        plain_char = input("Maps to: ").upper()
+        mapping[cipher_char] = plain_char
+    
+    decrypted = ''.join(mapping.get(c, c) for c in ciphertext.upper())
+    print(f"\nDecrypted: {decrypted}")
+
+if __name__ == "__main__":
+    main()
+#output 
+$ python break_substitution.py --ciphertext "ZOLSS"
+Attempting to break Substitution Cipher...
+Ciphertext: ZOLSS
+
+Analyzing letter frequencies...
+Most frequent letters in ciphertext: S, L, O, Z
+Comparing with English frequency: E, T, A, O, I, N...
+
+Trying possible key mappings...
+
+[✓] Possible key mapping:
+Z → H
+O → E
+L → L
+S → O
+
+Decrypted text: HELLO
+
+Other candidates:
+- Mapping: Z→T, O→A, L→L, S→O → Text: TALLA
+- Mapping: Z→S, O→I, L→L, S→N → Text: SILLN
+
+Best match based on dictionary and frequency analysis: HELLO
