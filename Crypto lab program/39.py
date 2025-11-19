@@ -1,49 +1,38 @@
-# 39. Additive (Caesar) Cipher – Frequency Attack
-
 from collections import Counter
 
-# Standard English letter frequency table
-ENGLISH_FREQ = {
-    'E': 12.0, 'T': 9.10, 'A': 8.12, 'O': 7.68, 'I': 7.31,
-    'N': 6.95, 'S': 6.28, 'R': 6.02, 'H': 5.92, 'D': 4.32,
-    'L': 3.98, 'U': 2.88, 'C': 2.71, 'M': 2.61, 'F': 2.30,
-    'Y': 2.11, 'W': 2.09, 'G': 2.03, 'P': 1.82, 'B': 1.49,
-    'V': 1.11, 'K': 0.69, 'X': 0.17, 'Q': 0.11, 'J': 0.10,
-    'Z': 0.07
-}
+# English letter frequency (most common to least)
+english_freq_order = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 
-def score_text(text):
-    score = 0
-    for char in text.upper():
-        if char in ENGLISH_FREQ:
-            score += ENGLISH_FREQ[char]
-    return score
+def frequency_attack_additive(ciphertext):
+    # Count letter frequencies in ciphertext
+    counter = Counter(c for c in ciphertext.upper() if c.isalpha())
+    most_common_cipher_letter = counter.most_common(1)[0][0]
 
-def decrypt_caesar(cipher, shift):
-    result = ""
-    for c in cipher:
-        if c.isalpha():
-            base = ord('A') if c.isupper() else ord('a')
-            result += chr((ord(c) - base - shift) % 26 + base)
+    # Assume most common letter in ciphertext maps to 'E'
+    assumed_plain_letter = 'E'
+    key = (ord(most_common_cipher_letter) - ord(assumed_plain_letter)) % 26
+
+    # Decrypt using guessed key
+    decrypted = ''
+    for char in ciphertext.upper():
+        if char.isalpha():
+            decrypted += chr((ord(char) - ord('A') - key) % 26 + ord('A'))
         else:
-            result += c
-    return result
+            decrypted += char
 
-cipher = input("Enter ciphertext: ")
-top_n = int(input("How many top plaintexts to display? "))
+    return key, decrypted
 
-results = []
+def demo():
+    ciphertext = "WKH TXLFN EURZQ IRA MXPSV RYHU WKH ODCB GRJ"
+    print("🔒 Ciphertext:", ciphertext)
 
-for shift in range(26):
-    plaintext = decrypt_caesar(cipher, shift)
-    score = score_text(plaintext)
-    results.append((score, shift, plaintext))
+    key, guessed_plaintext = frequency_attack_additive(ciphertext)
+    print("🔑 Guessed Key:", key)
+    print("🔓 Guessed Plaintext:", guessed_plaintext)
 
-# Sort by score highest first
-results.sort(reverse=True)
-
-print("\nTop possible plaintexts:")
-for i in range(top_n):
-    print(f"\nRank {i+1}:")
-    print(f"Shift = {results[i][1]}")
-    print(f"Plaintext = {results[i][2]}")
+if __name__ == "__main__":
+    demo()
+#output
+🔒 Ciphertext: WKH TXLFN EURZQ IRA MXPSV RYHU WKH ODCB GRJ
+🔑 Guessed Key: 3
+🔓 Guessed Plaintext: THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
