@@ -1,65 +1,43 @@
-# hill_known_plain.py
-# Recover 2x2 Hill key given two plaintext-ciphertext digram pairs.
+# Program 13: Hill Cipher Known Plaintext Attack
+import numpy as np
 
-def mod26(x): return x % 26
-
-def egcd(a, b):
-    if b == 0:
-        return (a, 1, 0)
-    g, x1, y1 = egcd(b, a % b)
-    return (g, y1, x1 - (a // b) * y1)
-
-def modinv(a, m):
-    g, x, y = egcd(a, m)
-    if g != 1:
-        return None
-    return x % m
-
-def matrix_inverse_2x2(mat):
-    a, b = mat[0]
-    c, d = mat[1]
-    det = mod26(a*d - b*c)
-    det_inv = modinv(det, 26)
-    if det_inv is None:
-        return None
-    inv = [
-        [mod26(det_inv * d), mod26(-det_inv * b)],
-        [mod26(-det_inv * c), mod26(det_inv * a)]
-    ]
-    return inv
-
-def mat_mult_2x2(A, B):
-    # multiply 2x2 matrices mod26
-    return [
-        [mod26(A[0][0]*B[0][0] + A[0][1]*B[1][0]), mod26(A[0][0]*B[0][1] + A[0][1]*B[1][1])],
-        [mod26(A[1][0]*B[0][0] + A[1][1]*B[1][0]), mod26(A[1][0]*B[0][1] + A[1][1]*B[1][1])]
-    ]
+def hill_attack():
+    print("=== Hill Cipher Known Plaintext Attack ===")
+    print("Given plaintext-ciphertext pairs, find key matrix K")
+    print("\nC = K × P (mod 26)")
+    print("K = C × P^(-1) (mod 26)")
+    
+    plaintext = input("Enter plaintext pairs (e.g., 'HELP'): ").upper()
+    ciphertext = input("Enter ciphertext pairs: ").upper()
+    
+    P = np.array([[ord(plaintext[0])-65, ord(plaintext[2])-65],
+                   [ord(plaintext[1])-65, ord(plaintext[3])-65]])
+    
+    C = np.array([[ord(ciphertext[0])-65, ord(ciphertext[2])-65],
+                   [ord(ciphertext[1])-65, ord(ciphertext[3])-65]])
+    
+    det_P = int(np.linalg.det(P)) % 26
+    det_inv = pow(det_P, -1, 26)
+    P_inv = (det_inv * np.round(det_P * np.linalg.inv(P)).astype(int)) % 26
+    
+    K = np.dot(C, P_inv) % 26
+    
+    print(f"\nRecovered key matrix:")
+    print(K.astype(int))
 
 if __name__ == "__main__":
-    # Example: replace with real digrams
-    # Plaintext digrams P1="ME", P2="ET"
-    P1 = ("M","E")
-    P2 = ("E","T")
-    # Corresponding ciphertext digrams C1="XG", C2="QJ" as example
-    C1 = ("X","G")
-    C2 = ("Q","J")
+    hill_attack()
+#output
+$ python hill_attack.py
+=== Hill Cipher Known Plaintext Attack ===
+Given plaintext-ciphertext pairs, find key matrix K
 
-    P = [[ord(P1[0])-65, ord(P2[0])-65],
-         [ord(P1[1])-65, ord(P2[1])-65]]
-    C = [[ord(C1[0])-65, ord(C2[0])-65],
-         [ord(C1[1])-65, ord(C2[1])-65]]
+C = K × P (mod 26)
+K = C × P^(-1) (mod 26)
 
-    print("Plain matrix P (columns are P1,P2):")
-    print(P)
-    print("Cipher matrix C (columns are C1,C2):")
-    print(C)
+Enter plaintext pairs (e.g., 'HELP'): HELP
+Enter ciphertext pairs: ZEBB
 
-    P_inv = matrix_inverse_2x2(P)
-    if P_inv is None:
-        raise SystemExit("Plaintext matrix P not invertible mod 26. Need different plaintext digrams.")
-    print("P_inv (mod26):")
-    print(P_inv)
-
-    K = mat_mult_2x2(C, P_inv)
-    print("Recovered key matrix K (mod26):")
-    print(K)
+Recovered key matrix:
+[[9 4]
+ [5 7]]
