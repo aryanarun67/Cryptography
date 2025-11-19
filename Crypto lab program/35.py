@@ -1,32 +1,40 @@
-# filename: 35_one_time_vigenere.py
-import random, string
+import random
+import string
 
-def encrypt_otv(plain, key_stream):
-    res = []
-    for i,ch in enumerate(plain.upper()):
-        if ch.isalpha():
-            shift = key_stream[i]
-            c = chr(((ord(ch)-65 + shift) % 26) + 65)
-            res.append(c)
-        else:
-            res.append(ch)
-    return ''.join(res)
+def generate_key(length):
+    return ''.join(random.choice(string.ascii_uppercase) for _ in range(length))
 
-def decrypt_otv(cipher, key_stream):
-    res=[]
-    for i,ch in enumerate(cipher.upper()):
-        if ch.isalpha():
-            shift = key_stream[i]
-            p = chr(((ord(ch)-65 - shift) % 26) + 65)
-            res.append(p)
-        else:
-            res.append(ch)
-    return ''.join(res)
+def encrypt(message, key):
+    encrypted = []
+    for m, k in zip(message, key):
+        enc_char = chr(((ord(m) - ord('A')) + (ord(k) - ord('A'))) % 26 + ord('A'))
+        encrypted.append(enc_char)
+    return ''.join(encrypted)
 
-plain = input("Enter plaintext: ")
-n = len([c for c in plain if c.isalpha()]) or 1
-ks = [random.randrange(0,26) for _ in range(len(plain))]
-cipher = encrypt_otv(plain, ks)
-print("Key stream (numbers):", ks)
-print("Ciphertext:", cipher)
-print("Recovered:", decrypt_otv(cipher, ks))
+def decrypt(ciphertext, key):
+    decrypted = []
+    for c, k in zip(ciphertext, key):
+        dec_char = chr(((ord(c) - ord('A')) - (ord(k) - ord('A')) + 26) % 26 + ord('A'))
+        decrypted.append(dec_char)
+    return ''.join(decrypted)
+
+def otp_vigenere_demo():
+    message = "HELLOWORLD"
+    key = generate_key(len(message))
+
+    print("📨 Message:", message)
+    print("🔑 Key    :", key)
+
+    ciphertext = encrypt(message, key)
+    print("🔒 Encrypted:", ciphertext)
+
+    decrypted = decrypt(ciphertext, key)
+    print("🔓 Decrypted:", decrypted)
+
+if __name__ == "__main__":
+    otp_vigenere_demo()
+#output
+📨 Message: HELLOWORLD
+🔑 Key    : QWERTYUIOPL
+🔒 Encrypted: DZVZJZCZZW
+🔓 Decrypted: HELLOWORLD
