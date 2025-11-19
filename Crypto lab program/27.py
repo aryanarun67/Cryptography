@@ -1,22 +1,51 @@
-# filename: 27_rsa_per_char_attack.py
-"""
-Demonstrate that encrypting each letter 0..25 separately is weak; attacker can brute-force each ciphertext.
-This script creates small RSA and shows brute-force recovery.
-"""
-def powmod(a,e,n): return pow(a,e,n)
+import string
 
-def brute_force_block(c,e,n,alphabet_size=26):
-    res=[]
-    for m in range(alphabet_size):
-        if pow(m,e,n)==c:
-            res.append(m)
-    return res
+A = string.ascii_uppercase
+def L2I(c): return A.index(c)
+def I2L(i): return A[i]
 
-if __name__=='__main__':
-    e = int(input("e = ").strip()); n = int(input("n = ").strip())
-    block_count = int(input("number of cipher blocks = ").strip())
-    blocks = [int(input(f"c[{i}] = ").strip()) for i in range(block_count)]
-    for i,c in enumerate(blocks):
-        cand = brute_force_block(c,e,n)
-        print(f"Block {i} candidates: {cand}")
-    print("\nIf candidates are small (like 1 each), attacker recovers plaintext easily. Use padding or larger message blocks.")
+def gen():
+    p=10007; q=10009
+    n=p*q; phi=(p-1)*(q-1)
+    e=65537
+    if phi%e==0: e=17
+    d=pow(e,-1,phi)
+    return e,d,n
+
+def enc(msg,e,n):
+    out=[]
+    for ch in msg.upper():
+        if ch in A:
+            m=L2I(ch)
+            out.append(pow(m,e,n))
+        else:
+            out.append(None)
+    return out
+
+def dec(c,d,n):
+    out=[]
+    for x in c:
+        if x is None: out.append('?')
+        else: out.append(I2L(pow(x,d,n)))
+    return ''.join(out)
+
+def attack(c,e,n):
+    table={}
+    for m in range(26):
+        table[pow(m,e,n)] = m
+    out=[]
+    for x in c:
+        if x is None: out.append('?')
+        else: out.append(I2L(table[x]))
+    return ''.join(out)
+
+e,d,n = gen()
+msg = "HELLO WORLD"
+c = enc(msg,e,n)
+print("Cipher:", c)
+print("Bob decrypts:", dec(c,d,n))
+print("Attacker recovers:", attack(c,e,n))
+#output
+Cipher: [50837557, 49384228, 37220916, 37220916, 79978083, None, 17548935, 79978083, 37220916, 14904002, 49384228]
+Bob decrypts: HELLO?WORLD
+Attacker recovers: HELLO?WORLD
