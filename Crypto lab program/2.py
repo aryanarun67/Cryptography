@@ -1,18 +1,41 @@
-# Monoalphabetic Cipher - Simple Letter Frequency Counter
+# Program 2: Monoalphabetic Substitution Cipher
+def monoalphabetic_encrypt(plaintext, key):
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    plaintext = plaintext.upper()
+    result = ""
+    for char in plaintext:
+        if char in alphabet:
+            result += key[alphabet.index(char)]
+        else:
+            result += char
+    return result
 
-text = input("Enter the encrypted text: ").upper()
+def monoalphabetic_decrypt(ciphertext, key):
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    ciphertext = ciphertext.upper()
+    result = ""
+    for char in ciphertext:
+        if char in key:
+            result += alphabet[key.index(char)]
+        else:
+            result += char
+    return result
 
-freq = {}
-for ch in text:
-    if ch.isalpha():
-        freq[ch] = freq.get(ch, 0) + 1
+def main():
+    print("=== Monoalphabetic Cipher ===")
+    choice = input("'e' for encrypt, 'd' for decrypt: ").lower()
+    text = input("Enter text: ")
+    key = input("Enter 26-letter key: ").upper()
+    
+    if choice == 'e':
+        print(f"Encrypted: {monoalphabetic_encrypt(text, key)}")
+    else:
+        print(f"Decrypted: {monoalphabetic_decrypt(text, key)}")
 
-print("\nLetter frequency in the ciphertext:")
-for letter in sorted(freq):
-    print(f"{letter} : {freq[letter]}")
-
-# Optional: Show letters by highest frequency
-sorted_freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
-print("\nMost frequent letters (in order):")
-for letter, count in sorted_freq:
-    print(f"{letter} -> {count}")
+if __name__ == "__main__":
+    main()
+#output
+=== Monoalphabetic Cipher ===
+'e' for encrypt, 'd' for decrypt: e
+Enter text: csa5112
+Enter 26-letter key: 20
