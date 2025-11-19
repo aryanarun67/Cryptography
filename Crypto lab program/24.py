@@ -1,33 +1,25 @@
-# filename: 24_rsa_find_private_key.py
-"""
-Given e and n, factor n by trial division (works if p,q small) and compute private key d.
-Input: prompted.
-"""
-import math
+def egcd(a, b):
+    if a == 0:
+        return b, 0, 1
+    g, y, x = egcd(b % a, a)
+    return g, x - (b // a) * y, y
 
-def egcd(a,b):
-    if b==0: return (a,1,0)
-    g,x1,y1 = egcd(b, a%b)
-    return (g, y1, x1 - (a//b)*y1)
+def modinv(e, phi):
+    g, x, _ = egcd(e, phi)
+    if g != 1:
+        raise Exception('modular inverse does not exist')
+    return x % phi
 
-def modinv(a,m):
-    g,x,y = egcd(a,m)
-    if g!=1: raise Exception("No inverse")
-    return x % m
+p = 61
+q = 53
+n = p * q
+phi = (p - 1) * (q - 1)
+e = 17
+d = modinv(e, phi)
 
-def trial_factor(n):
-    for i in range(2, int(math.isqrt(n))+1):
-        if n % i == 0:
-            return i, n//i
-    return 1,n
+print("Public Key (n, e):", (n, e))
+print("Private Key (n, d):", (n, d))
+#output
 
-if __name__=='__main__':
-    e = int(input("e = ").strip())
-    n = int(input("n = ").strip())
-    p,q = trial_factor(n)
-    if p==1:
-        print("Failed to factor n by trial division")
-    else:
-        phi = (p-1)*(q-1)
-        d = modinv(e, phi)
-        print("p=",p,"q=",q,"d=",d)
+Public Key (n, e): (3233, 17)
+Private Key (n, d): (3233, 2753)
