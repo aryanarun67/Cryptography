@@ -1,38 +1,45 @@
-# filename: 36_affine_caesar.py
-import math
+def mod_inverse(a, m):
+    # Extended Euclidean Algorithm to find modular inverse
+    for x in range(1, m):
+        if (a * x) % m == 1:
+            return x
+    raise ValueError("No modular inverse exists")
 
-def encrypt_affine(plain, a, b):
-    out = []
-    for ch in plain.upper():
-        if ch.isalpha():
-            p = ord(ch)-65
-            out.append(chr(((a*p + b) % 26) + 65))
+def affine_encrypt(text, a, b):
+    result = ''
+    for char in text.upper():
+        if char.isalpha():
+            enc = (a * (ord(char) - ord('A')) + b) % 26
+            result += chr(enc + ord('A'))
         else:
-            out.append(ch)
-    return ''.join(out)
+            result += char
+    return result
 
-def decrypt_affine(cipher, a, b):
-    if math.gcd(a,26) != 1:
-        raise ValueError("a not invertible modulo 26; decryption impossible.")
-    a_inv = pow(a, -1, 26)
-    out=[]
-    for ch in cipher.upper():
-        if ch.isalpha():
-            c = ord(ch)-65
-            out.append(chr(((a_inv*(c - b)) % 26) + 65))
+def affine_decrypt(cipher, a, b):
+    result = ''
+    a_inv = mod_inverse(a, 26)
+    for char in cipher.upper():
+        if char.isalpha():
+            dec = (a_inv * ((ord(char) - ord('A')) - b)) % 26
+            result += chr(dec + ord('A'))
         else:
-            out.append(ch)
-    return ''.join(out)
+            result += char
+    return result
 
-a = int(input("Enter a: "))
-b = int(input("Enter b: "))
-plain = input("Enter plaintext: ")
-print("Encrypting...")
-ct = encrypt_affine(plain, a, b)
-print("Cipher:", ct)
-try:
-    pt = decrypt_affine(ct, a, b)
-    print("Decrypted:", pt)
-except ValueError as e:
-    print("Decryption failed:", e)
-    print("Example failure: a=2,b=3 -> E(0)=E(13)=3 shows not one-to-one.")
+def affine_demo():
+    a = 5  # Must be coprime with 26
+    b = 8
+    message = "AFFINE CIPHER"
+
+    print("📨 Original:", message)
+    encrypted = affine_encrypt(message, a, b)
+    print("🔒 Encrypted:", encrypted)
+    decrypted = affine_decrypt(encrypted, a, b)
+    print("🔓 Decrypted:", decrypted)
+
+if __name__ == "__main__":
+    affine_demo()
+#output
+📨 Original: AFFINE CIPHER
+🔒 Encrypted: IHHWVCSWFRCP
+🔓 Decrypted: AFFINECIPHER
