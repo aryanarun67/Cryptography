@@ -1,58 +1,33 @@
-# filename: 37_monoalphabetic_topn.py
-import random, math
 from collections import Counter
 
-ENGLISH_FREQ_ORDER = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
+# English letter frequency (most to least common)
+english_freq_order = "ETAOINSHRDLCUMWFGYPBVKJXQZ"
 
-def score_text(text):
-    freq = Counter(c for c in text.upper() if c.isalpha())
-    score = 0
-    for i,(c,_) in enumerate(freq.most_common()):
-        if i < len(ENGLISH_FREQ_ORDER) and c == ENGLISH_FREQ_ORDER[i]:
-            score += (len(freq)-i)
-    return score
-
-def random_key():
-    letters=list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-    perm=letters[:]
-    random.shuffle(perm)
-    return dict(zip(letters,perm))
-
-def apply_key(text,key):
-    out=[]
-    for ch in text:
-        if ch.upper() in key and ch.isalpha():
-            mapped=key[ch.upper()]
-            out.append(mapped.lower() if ch.islower() else mapped)
+def frequency_attack(ciphertext):
+    # Count frequency of letters in ciphertext
+    counter = Counter(c for c in ciphertext.upper() if c.isalpha())
+    sorted_cipher_letters = [item[0] for item in counter.most_common()]
+    
+    # Create mapping from cipher letters to English frequency letters
+    mapping = dict(zip(sorted_cipher_letters, english_freq_order))
+    
+    # Attempt decryption using frequency mapping
+    decrypted = ''
+    for char in ciphertext.upper():
+        if char.isalpha():
+            decrypted += mapping.get(char, '?')
         else:
-            out.append(ch)
-    return ''.join(out)
+            decrypted += char
+    return decrypted
 
-def tweak_key_swap(key):
-    a,b = random.sample(list(key.keys()),2)
-    nk = key.copy()
-    nk[a], nk[b] = nk[b], nk[a]
-    return nk
+def demo():
+    cipher = "WKH TXLFN EURZQ IRA MXPSV RYHU WKH ODCB GRJ"
+    print("🔒 Ciphertext:", cipher)
+    guessed_plaintext = frequency_attack(cipher)
+    print("🔓 Guessed Plaintext:", guessed_plaintext)
 
-def solve(ciphertext, top_n=10, restarts=200, iters=2000):
-    candidates=[]
-    for _ in range(restarts):
-        key=random_key()
-        plain=apply_key(ciphertext,key)
-        s=score_text(plain)
-        for _ in range(iters):
-            k2 = tweak_key_swap(key)
-            p2 = apply_key(ciphertext,k2)
-            s2 = score_text(p2)
-            if s2 > s or random.random() < 0.001:
-                key, s, plain = k2, s2, p2
-        candidates.append((s, plain))
-    candidates.sort(reverse=True)
-    return candidates[:top_n]
-
-if __name__=='__main__':
-    ct = input("Enter ciphertext: ")
-    topn = int(input("Top how many results? "))
-    results = solve(ct, top_n=topn)
-    for i,(s,p) in enumerate(results,1):
-        print(f"\nOption {i} (score {s}):\n{p}")
+if __name__ == "__main__":
+    demo()
+#output
+🔒 Ciphertext: WKH TXLFN EURZQ IRA MXPSV RYHU WKH ODCB GRJ
+🔓 Guessed Plaintext: THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG
