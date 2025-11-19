@@ -1,45 +1,54 @@
-# filename: 18_des_subkey_custom_split.py
-"""
-Construct 16 48-bit subkeys where first 24 bits come from subset A (28 bits)
-and second 24 bits from subset B (disjoint 28 bits) of the initial 56-bit key.
-This is a demonstrative key schedule, not real DES.
-"""
-import random
+PC1 = [
+    57,49,41,33,25,17,9,1,58,50,42,34,26,18,
+    10,2,59,51,43,35,27,19,11,3,60,52,44,36,
+    63,55,47,39,31,23,15,7,62,54,46,38,30,22,
+    14,6,61,53,45,37,29,21,13,5,28,20,12,4
+]
 
-def bits_from_int(x, length):
-    return [(x >> i) & 1 for i in range(length-1, -1, -1)]
+PC2 = [
+    14,17,11,24,1,5,3,28,15,6,21,10,
+    23,19,12,4,26,8,16,7,27,20,13,2,
+    41,52,31,37,47,55,30,40,51,45,33,48,
+    44,49,39,56,34,53,46,42,50,36,29,32
+]
 
-def int_from_bits(bits):
-    v = 0
-    for b in bits:
-        v = (v << 1) | (b & 1)
-    return v
+SHIFT_SCHEDULE = [1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1]
 
-def make_subkeys(key56):
-    # key56: integer 0..(1<<56)-1
-    all_bits = bits_from_int(key56, 56)
-    A = all_bits[:28]
-    B = all_bits[28:]
-    # for each round, rotate A and B by some schedule and pick top 24 bits each
-    schedule = [1,1,2,2,2,2,2,2,1,2,2,2,2,2,2,1]  # example left-rotations like DES
+def permute(bits, table):
+    return ''.join(bits[i-1] for i in table)
+
+def left_shift(bits, n):
+    return bits[n:] + bits[:n]
+
+def generate_subkeys(key64):
+    key56 = permute(key64, PC1)
+    C, D = key56[:28], key56[28:]
     subkeys = []
-    a = A[:]
-    b = B[:]
-    for sh in schedule:
-        # left rotate
-        a = a[sh:] + a[:sh]
-        b = b[sh:] + b[:sh]
-        a24 = a[:24]
-        b24 = b[:24]
-        sub = a24 + b24  # 48 bits
-        subkeys.append(int_from_bits(sub))
+    for shift in SHIFT_SCHEDULE:
+        C = left_shift(C, shift)
+        D = left_shift(D, shift)
+        subkeys.append(permute(C + D, PC2))
     return subkeys
 
-def demo():
-    k = random.getrandbits(56)
-    subs = make_subkeys(k)
-    for i,s in enumerate(subs,1):
-        print(f"Round {i}: subkey (48-bit hex) = {s:012x}")
+key64 = '0001001100110100010101110111100110011011101111001101111111110001'
+subkeys = generate_subkeys(key64)
 
-if __name__ == "__main__":
-    demo()
+for i, k in enumerate(subkeys, 1):
+    print(f"Round {i:2}: {k}")
+#output
+Round  1: 000110110000001011101111111111000111000001110010
+Round  2: 011110011010111011011001110110111100100111100101
+Round  3: 010101011111110010001010010000101100111110011001
+Round  4: 011100101010110111010110110110110011010100011101
+Round  5: 011111001110110000000111111010110101001110101000
+Round  6: 011000111010010100111110010100000111101100101111
+Round  7: 111011001000010010110111111101100001100010111100
+Round  8: 111101111000101000111010110000010011101111111011
+Round  9: 111000001101101111101011111011011110011110000001
+Round 10: 101100011111001101000111101110100100011001001111
+Round 11: 001000010101111111010011110111101101001110000110
+Round 12: 011101010111000111110101100101000110011111101001
+Round 13: 100101111100010111010001111110101011101001000001
+Round 14: 010111110100001110110111111100101110011100111010
+Round 15: 101111111001000110001101001111010011111100001010
+Round 16: 110010110011110110001011000011100001011111110101
